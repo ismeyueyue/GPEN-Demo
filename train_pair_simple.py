@@ -22,6 +22,7 @@ from torchvision import transforms, utils
 
 import __init_paths
 from training.data_loader.dataset_face import FaceDataset
+from training.data_loader.dataset_face import FacePairDataset
 from face_model.gpen_model import FullGenerator, Discriminator
 
 from training.loss.id_loss import IDLoss
@@ -297,6 +298,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--gt_path', type=str, required=True)
+    parser.add_argument('--lq_path', type=str, required=True)
+    
     parser.add_argument('--path', type=str, required=True)
     parser.add_argument('--base_dir', type=str, default='./')
     parser.add_argument('--iter', type=int, default=4000000)
@@ -309,7 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('--path_batch_shrink', type=int, default=2)
     parser.add_argument('--d_reg_every', type=int, default=16)
     parser.add_argument('--g_reg_every', type=int, default=4)
-    parser.add_argument('--save_freq', type=int, default=1000)
+    parser.add_argument('--save_freq', type=int, default=10000)
     parser.add_argument('--lr', type=float, default=0.002)
     parser.add_argument('--local_rank', type=int, default=0)
     parser.add_argument('--ckpt', type=str, default='ckpts')
@@ -401,8 +405,9 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
-
-    dataset = FaceDataset(args.path, args.size)
+        
+    # dataset = FaceDataset(args.path, args.size)
+    dataset = FacePairDataset(args.gt_path, args.lq_path, args.size)
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
@@ -413,5 +418,4 @@ if __name__ == '__main__':
     train(args, loader, generator, discriminator, [smooth_l1_loss, id_loss], g_optim, d_optim, g_ema, lpips_func, device)
    
 
-
-# CUDA_VISIBLE_DEVICES='0' python train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path examples/ffhq-10
+# CUDA_VISIBLE_DEVICES='0' python train_pair_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path examples/ffhq-10

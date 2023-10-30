@@ -101,3 +101,36 @@ class FaceDataset(Dataset):
 
         return img_lq, img_gt
 
+class FacePairDataset(Dataset):
+    def __init__(self, gt_path, lq_path, resolution=512):
+        self.resolution = resolution
+
+        self.HQ_imgs = glob.glob(os.path.join(gt_path, '*.*'))
+        self.LQ_imgs = glob.glob(os.path.join(lq_path, '*.*'))
+        
+        self.length = len(self.HQ_imgs)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, index):
+        img_gt = cv2.imread(self.HQ_imgs[index], cv2.IMREAD_COLOR)
+        img_gt = cv2.resize(img_gt, (self.resolution, self.resolution), interpolation=cv2.INTER_AREA)
+
+        img_lq = cv2.imread(self.LQ_imgs[index], cv2.IMREAD_COLOR)
+        img_lq = cv2.resize(img_lq, (self.resolution, self.resolution), interpolation=cv2.INTER_AREA)
+        
+        # BFR degradation
+        # We adopt the degradation of GFPGAN for simplicity, which however differs from our implementation in the paper.
+        # Data degradation plays a key role in BFR. Please replace it with your own methods.
+        img_gt = img_gt.astype(np.float32)/255.
+        img_lq = img_lq.astype(np.float32)/255.
+
+        img_gt =  (torch.from_numpy(img_gt) - 0.5) / 0.5
+        img_lq =  (torch.from_numpy(img_lq) - 0.5) / 0.5
+        
+        img_gt = img_gt.permute(2, 0, 1).flip(0) # BGR->RGB
+        img_lq = img_lq.permute(2, 0, 1).flip(0) # BGR->RGB
+
+        return img_lq, img_gt
+
