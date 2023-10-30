@@ -109,6 +109,9 @@ class FacePairDataset(Dataset):
         self.LQ_imgs = glob.glob(os.path.join(lq_path, '*.*'))
         
         self.length = len(self.HQ_imgs)
+        
+        print("load HQ: {} from {}".format(len(self.HQ_imgs), gt_path))
+        print("load LQ: {} from {}".format(len(self.LQ_imgs), lq_path))
 
     def __len__(self):
         return self.length

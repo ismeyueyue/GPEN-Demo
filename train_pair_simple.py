@@ -300,7 +300,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--gt_path', type=str, required=True)
     parser.add_argument('--lq_path', type=str, required=True)
-    
+
     parser.add_argument('--base_dir', type=str, default='./')
     parser.add_argument('--iter', type=int, default=4000000)
     parser.add_argument('--batch', type=int, default=4)
@@ -417,4 +417,6 @@ if __name__ == '__main__':
     train(args, loader, generator, discriminator, [smooth_l1_loss, id_loss], g_optim, d_optim, g_ema, lpips_func, device)
    
 
-# CUDA_VISIBLE_DEVICES='0' python train_pair_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path examples/train/input --lq_path examples/reference
+# CUDA_VISIBLE_DEVICES='0, 1' python train_pair_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
+
+# CUDA_VISIBLE_DEVICES='0, 1' python train_pair_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr
