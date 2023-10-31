@@ -406,7 +406,7 @@ if __name__ == '__main__':
         )
         
     # dataset = FaceDataset(args.path, args.size)
-    dataset = FacePairDataset(args.gt_path, args.lq_path, args.size)
+    dataset = FacePairDataset(gt_path=args.gt_path, lq_path=args.lq_path, args.size)
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
@@ -419,11 +419,13 @@ if __name__ == '__main__':
 
 # CUDA_VISIBLE_DEVICES='0,1,3,4' python -m torch.distributed.launch --nproc_per_node=2 --master_port=4321 python train_pair_simple --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
 
-# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 512 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
-
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 6 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr --save_freq 5000
+# 
 # --pretrain weights/040000.pth
 
+# --save_freq 10000 --pretrain weights/040000.pth
 
-# CUDA_VISIBLE_DEVICES='0' python train_pair_simple.py --size 128 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr
+
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 4 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr --save_freq 10000 --pretrain weights/040000.pth
 
 # CUDA_VISIBLE_DEVICES='0' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path your_path_of_croped+aligned_hq_faces (e.g., FFHQ)

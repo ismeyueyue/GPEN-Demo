@@ -7,6 +7,7 @@ import random
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
+from utils.scan_floder import paired_paths_from_folder
 
 import degradations
 
@@ -103,24 +104,26 @@ class FaceDataset(Dataset):
 
 class FacePairDataset(Dataset):
     def __init__(self, gt_path, lq_path, resolution=512):
+        self.gt_path = gt_path
+        self.lq_path = lq_path
         self.resolution = resolution
 
-        self.HQ_imgs = glob.glob(os.path.join(gt_path, '*.*'))
-        self.LQ_imgs = glob.glob(os.path.join(lq_path, '*.*'))
+        self.paths = paired_paths_from_folder([self.lq_path, self.gt_path], ['lq', 'gt'])
         
-        self.length = len(self.HQ_imgs)
-        
-        print("load HQ: {} from {}".format(len(self.HQ_imgs), gt_path))
-        print("load LQ: {} from {}".format(len(self.LQ_imgs), lq_path))
+        self.length = len(self.paths)
+        print("load Total Dataset {} from {}-{}".format(self.length, self.gt_path, self.lq_path))
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, index):
-        img_gt = cv2.imread(self.HQ_imgs[index], cv2.IMREAD_COLOR)
+        gt_path = self.paths[index]['gt_path']
+        lq_path = self.paths[index]['lq_path']
+    
+        img_gt = cv2.imread(gt_path, cv2.IMREAD_COLOR)
         img_gt = cv2.resize(img_gt, (self.resolution, self.resolution), interpolation=cv2.INTER_AREA)
 
-        img_lq = cv2.imread(self.LQ_imgs[index], cv2.IMREAD_COLOR)
+        img_lq = cv2.imread(lq_path, cv2.IMREAD_COLOR)
         img_lq = cv2.resize(img_lq, (self.resolution, self.resolution), interpolation=cv2.INTER_AREA)
         
         # BFR degradation

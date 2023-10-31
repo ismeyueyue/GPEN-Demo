@@ -131,3 +131,4 @@ dmypy.json
 
 weights
 examples
+.ipynb_checkpoints
