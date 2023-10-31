@@ -7,10 +7,8 @@ import random
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset
-from utils.scan_floder import paired_paths_from_folder
-
 import degradations
-
+import scan_folder
 
 class GFPGAN_degradation(object):
     def __init__(self):
@@ -108,7 +106,7 @@ class FacePairDataset(Dataset):
         self.lq_path = lq_path
         self.resolution = resolution
 
-        self.paths = paired_paths_from_folder([self.lq_path, self.gt_path], ['lq', 'gt'])
+        self.paths = scan_folder.paired_paths_from_folder([self.lq_path, self.gt_path], ['lq', 'gt'])
         
         self.length = len(self.paths)
         print("load Total Dataset {} from {}-{}".format(self.length, self.gt_path, self.lq_path))
@@ -139,4 +137,3 @@ class FacePairDataset(Dataset):
         img_lq = img_lq.permute(2, 0, 1).flip(0) # BGR->RGB
 
         return img_lq, img_gt
-
