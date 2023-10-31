@@ -297,10 +297,8 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
     parser.add_argument('--gt_path', type=str, required=True)
     parser.add_argument('--lq_path', type=str, required=True)
-
     parser.add_argument('--base_dir', type=str, default='./')
     parser.add_argument('--iter', type=int, default=4000000)
     parser.add_argument('--batch', type=int, default=4)
@@ -406,7 +404,7 @@ if __name__ == '__main__':
         )
         
     # dataset = FaceDataset(args.path, args.size)
-    dataset = FacePairDataset(gt_path=args.gt_path, lq_path=args.lq_path, args.size)
+    dataset = FacePairDataset(gt_path=args.gt_path, lq_path=args.lq_path, resolution=args.size)
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
