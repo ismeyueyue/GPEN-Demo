@@ -312,7 +312,7 @@ if __name__ == '__main__':
     parser.add_argument('--path_batch_shrink', type=int, default=2)
     parser.add_argument('--d_reg_every', type=int, default=16)
     parser.add_argument('--g_reg_every', type=int, default=4)
-    parser.add_argument('--save_freq', type=int, default=2000)
+    parser.add_argument('--save_freq', type=int, default=5000)
     parser.add_argument('--lr', type=float, default=0.002)
     parser.add_argument('--local_rank', type=int, default=0)
     parser.add_argument('--ckpt', type=str, default='ckpts')
@@ -417,8 +417,13 @@ if __name__ == '__main__':
     train(args, loader, generator, discriminator, [smooth_l1_loss, id_loss], g_optim, d_optim, g_ema, lpips_func, device)
    
 
-# CUDA_VISIBLE_DEVICES='0,1' python -m torch.distributed.launch --nproc_per_node=2 --master_port=4321 python train_pair_simple --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
+# CUDA_VISIBLE_DEVICES='0,1,3,4' python -m torch.distributed.launch --nproc_per_node=2 --master_port=4321 python train_pair_simple --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
 
-# CUDA_VISIBLE_DEVICES='0' python train_pair_simple.py --size 512 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 512 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
+
+# --pretrain weights/040000.pth
+
+
+# CUDA_VISIBLE_DEVICES='0' python train_pair_simple.py --size 128 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr
 
 # CUDA_VISIBLE_DEVICES='0' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path your_path_of_croped+aligned_hq_faces (e.g., FFHQ)

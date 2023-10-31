@@ -414,4 +414,6 @@ if __name__ == '__main__':
    
 
 
-# CUDA_VISIBLE_DEVICES='0' python train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path examples/ffhq-10
+# CUDA_VISIBLE_DEVICES='0' python train_simple.py --size 128 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --path examples/ffhq-10
+
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_simple.py --size 128 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --path examples/ffhq-10
