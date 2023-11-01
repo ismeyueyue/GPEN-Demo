@@ -1,6 +1,6 @@
-
 import os
 from os import path as osp
+
 
 def scandir(dir_path, suffix=None, recursive=False, full_path=False):
     """Scan a directory to find the interested files.
@@ -37,11 +37,14 @@ def scandir(dir_path, suffix=None, recursive=False, full_path=False):
                     yield return_path
             else:
                 if recursive:
-                    yield from _scandir(entry.path, suffix=suffix, recursive=recursive)
+                    yield from _scandir(entry.path,
+                                        suffix=suffix,
+                                        recursive=recursive)
                 else:
                     continue
 
     return _scandir(dir_path, suffix=suffix, recursive=recursive)
+
 
 def paired_paths_from_folder(folders, keys):
     """Generate paired paths from folders.
@@ -54,15 +57,18 @@ def paired_paths_from_folder(folders, keys):
     Returns:
         list[str]: Returned path list.
     """
-    assert len(folders) == 2, ('The len of folders should be 2 with [input_folder, gt_folder]. '
-                               f'But got {len(folders)}')
-    assert len(keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
+    assert len(folders) == 2, (
+        'The len of folders should be 2 with [input_folder, gt_folder]. '
+        f'But got {len(folders)}')
+    assert len(
+        keys
+    ) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
     input_folder, gt_folder = folders
     input_key, gt_key = keys
 
-    input_paths = list(scandir(input_folder, recursive=True))
-    gt_paths = list(scandir(gt_folder, recursive=True))
-	
+    input_paths = list(scandir(input_folder, suffix=".jpg", recursive=True))
+    gt_paths = list(scandir(gt_folder, suffix=".jpg", recursive=True))
+
     # assert len(input_paths) == len(gt_paths), (f'{input_key} and {gt_key} datasets have different number of images: '
     #                                            f'{len(input_paths)}, {len(gt_paths)}.')
     paths = []
@@ -71,7 +77,9 @@ def paired_paths_from_folder(folders, keys):
         if input_name in input_paths:
             input_path = osp.join(input_folder, input_name)
             gt_path = osp.join(gt_folder, gt_path)
-            paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+            paths.append(
+                dict([(f'{input_key}_path', input_path),
+                      (f'{gt_key}_path', gt_path)]))
 
         # input_path = osp.join(input_folder, input_name)
         # assert input_name in input_paths, f'{input_name} is not in {input_key}_paths.'
