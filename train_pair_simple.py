@@ -315,6 +315,8 @@ if __name__ == '__main__':
     parser.add_argument('--local_rank', type=int, default=0)
     parser.add_argument('--ckpt', type=str, default='ckpts')
     parser.add_argument('--pretrain', type=str, default=None)
+    parser.add_argument('--pretrain_g', type=str, default=None)
+    parser.add_argument('--pretrain_d', type=str, default=None)
     parser.add_argument('--sample', type=str, default='sample')
     parser.add_argument('--val_dir', type=str, default='val')
 
@@ -377,6 +379,19 @@ if __name__ == '__main__':
         g_optim.load_state_dict(ckpt['g_optim'])
         d_optim.load_state_dict(ckpt['d_optim'])
     
+    if args.pretrain_g is not None:
+        print('load model:', args.pretrain_g)
+
+        ckpt = torch.load(args.pretrain_g)
+        generator.load_state_dict(ckpt)
+        g_ema.load_state_dict(ckpt)
+
+    if args.pretrain_g is not None:
+        print('load model:', args.pretrain_g)
+
+        ckpt = torch.load(args.pretrain_d)
+        discriminator.load_state_dict(ckpt)
+    
     smooth_l1_loss = torch.nn.SmoothL1Loss().to(device)
     id_loss = IDLoss(args.base_dir, device, ckpt_dict=None)
     lpips_func = lpips.LPIPS(net='alex',version='0.1').to(device)
@@ -427,3 +442,5 @@ if __name__ == '__main__':
 # CUDA_VISIBLE_DEVICES='0,1,2,3' python train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 4 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr --save_freq 10000 --pretrain weights/040000.pth
 
 # CUDA_VISIBLE_DEVICES='0' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path your_path_of_croped+aligned_hq_faces (e.g., FFHQ)
+
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 4 --gt_path /DATA/jupyter/personal/Dataset/Res/Swap/gt --lq_path /DATA/jupyter/personal/Dataset/Res/Swap/lr --save_freq 5000 --pretrain_g weights/GPEN-BFR-256.pth --pretrain_d weights/GPEN-BFR-256-D.pth
