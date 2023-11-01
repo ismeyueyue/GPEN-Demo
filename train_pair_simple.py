@@ -378,6 +378,9 @@ if __name__ == '__main__':
             
         g_optim.load_state_dict(ckpt['g_optim'])
         d_optim.load_state_dict(ckpt['d_optim'])
+
+        iter_str =  os.path.basename(str).replace(".pth", "")
+        args.start_iter = int(iter_str)
     
     if args.pretrain_g is not None:
         print('load model:', args.pretrain_g)
@@ -419,7 +422,9 @@ if __name__ == '__main__':
         )
         
     # dataset = FaceDataset(args.path, args.size)
+    print("start build dataset...")
     dataset = FacePairDataset(gt_path=args.gt_path, lq_path=args.lq_path, resolution=args.size)
+    print("start build loader...")
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
@@ -443,4 +448,7 @@ if __name__ == '__main__':
 
 # CUDA_VISIBLE_DEVICES='0' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_simple.py --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 2 --path your_path_of_croped+aligned_hq_faces (e.g., FFHQ)
 
-# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 4 --gt_path /DATA/jupyter/personal/Dataset/Res/Swap/gt --lq_path /DATA/jupyter/personal/Dataset/Res/Swap/lr --save_freq 5000 --pretrain_g weights/GPEN-BFR-256.pth --pretrain_d weights/GPEN-BFR-256-D.pth
+# CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt /model_dir/gpen/weights --sample /model_dir/gpen/results --batch 4 --gt_path /workspace/VGGface2-Swap/gt --lq_path /workspace/VGGface2-Swap/lr --save_freq 5000 --pretrain weights/045000.pth
+
+# 下载数据
+# aws --endpoint-url=http://jssz-boss.bilibili.co s3 cp --recursive s3://cv_data/huyueyue/tmp/Dataset/VGGface2-Swap  /workspace/VGGface2-Swap
