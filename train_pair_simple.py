@@ -75,39 +75,44 @@ def d_logistic_loss(real_pred, fake_pred):
 
 
 def d_r1_loss(real_pred, real_img):
-    grad_real, = autograd.grad(
-        outputs=real_pred.sum(), inputs=real_img, create_graph=True
-    )
+    grad_real, = autograd.grad(outputs=real_pred.sum(),
+                               inputs=real_img,
+                               create_graph=True)
     grad_penalty = grad_real.pow(2).view(grad_real.shape[0], -1).sum(1).mean()
 
     return grad_penalty
 
 
-def g_nonsaturating_loss(fake_pred, loss_funcs=None, fake_img=None, real_img=None, input_img=None):
+def g_nonsaturating_loss(fake_pred,
+                         loss_funcs=None,
+                         fake_img=None,
+                         real_img=None,
+                         input_img=None):
     smooth_l1_loss, id_loss = loss_funcs
-    
+
     loss = F.softplus(-fake_pred).mean()
     loss_l1 = smooth_l1_loss(fake_img, real_img)
     loss_id, __, __ = id_loss(fake_img, real_img, input_img)
-    loss += 1.0*loss_l1 + 1.0*loss_id
+    loss += 1.0 * loss_l1 + 1.0 * loss_id
 
     return loss
 
 
 def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):
     noise = torch.randn_like(fake_img) / math.sqrt(
-        fake_img.shape[2] * fake_img.shape[3]
-    )
-    grad, = autograd.grad(
-        outputs=(fake_img * noise).sum(), inputs=latents, create_graph=True
-    )
+        fake_img.shape[2] * fake_img.shape[3])
+    grad, = autograd.grad(outputs=(fake_img * noise).sum(),
+                          inputs=latents,
+                          create_graph=True)
     path_lengths = torch.sqrt(grad.pow(2).sum(2).mean(1))
 
-    path_mean = mean_path_length + decay * (path_lengths.mean() - mean_path_length)
+    path_mean = mean_path_length + decay * (path_lengths.mean() -
+                                            mean_path_length)
 
     path_penalty = (path_lengths - path_mean).pow(2).mean()
 
     return path_penalty, path_mean.detach(), path_lengths
+
 
 def validation(model, lpips_func, args, device):
     lq_files = sorted(glob.glob(os.path.join(args.val_dir, 'lq', '*.*')))
@@ -119,28 +124,33 @@ def validation(model, lpips_func, args, device):
     model.eval()
     for lq_f, hq_f in zip(lq_files, hq_files):
         img_lq = cv2.imread(lq_f, cv2.IMREAD_COLOR)
-        img_t = torch.from_numpy(img_lq).to(device).permute(2, 0, 1).unsqueeze(0)
-        img_t = (img_t/255.-0.5)/0.5
+        img_t = torch.from_numpy(img_lq).to(device).permute(2, 0,
+                                                            1).unsqueeze(0)
+        img_t = (img_t / 255. - 0.5) / 0.5
         img_t = F.interpolate(img_t, (args.size, args.size))
         img_t = torch.flip(img_t, [1])
-        
+
         with torch.no_grad():
             img_out, __ = model(img_t)
-        
+
             img_hq = lpips.im2tensor(lpips.load_image(hq_f)).to(device)
             img_hq = F.interpolate(img_hq, (args.size, args.size))
             dist_sum += lpips_func.forward(img_out, img_hq)
-    
-    return dist_sum.data/len(lq_files)
+
+    return dist_sum.data / len(lq_files)
 
 
-def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_ema, lpips_func, device):
+def train(args, loader, generator, discriminator, losses, g_optim, d_optim,
+          g_ema, lpips_func, device):
     loader = sample_data(loader)
 
     pbar = range(0, args.iter)
 
     if get_rank() == 0:
-        pbar = tqdm(pbar, initial=args.start_iter, dynamic_ncols=True, smoothing=0.01)
+        pbar = tqdm(pbar,
+                    initial=args.start_iter,
+                    dynamic_ncols=True,
+                    smoothing=0.01)
 
     mean_path_length = 0
 
@@ -159,8 +169,8 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
     else:
         g_module = generator
         d_module = discriminator
- 
-    accum = 0.5 ** (32 / (10 * 1000))
+
+    accum = 0.5**(32 / (10 * 1000))
 
     for idx in pbar:
         i = idx + args.start_iter
@@ -199,7 +209,8 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
             r1_loss = d_r1_loss(real_pred, real_img)
 
             discriminator.zero_grad()
-            (args.r1 / 2 * r1_loss * args.d_reg_every + 0 * real_pred[0]).backward()
+            (args.r1 / 2 * r1_loss * args.d_reg_every +
+             0 * real_pred[0]).backward()
 
             d_optim.step()
 
@@ -210,7 +221,8 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
 
         fake_img, _ = generator(degraded_img)
         fake_pred = discriminator(fake_img)
-        g_loss = g_nonsaturating_loss(fake_pred, losses, fake_img, real_img, degraded_img)
+        g_loss = g_nonsaturating_loss(fake_pred, losses, fake_img, real_img,
+                                      degraded_img)
 
         loss_dict['g'] = g_loss
 
@@ -226,8 +238,7 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
             fake_img, latents = generator(degraded_img, return_latents=True)
 
             path_loss, mean_path_length, path_lengths = g_path_regularize(
-                fake_img, latents, mean_path_length
-            )
+                fake_img, latents, mean_path_length)
 
             generator.zero_grad()
             weighted_path_loss = args.path_regularize * args.g_reg_every * path_loss
@@ -239,9 +250,8 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
 
             g_optim.step()
 
-            mean_path_length_avg = (
-                reduce_sum(mean_path_length).item() / get_world_size()
-            )
+            mean_path_length_avg = (reduce_sum(mean_path_length).item() /
+                                    get_world_size())
 
         loss_dict['path'] = path_loss
         loss_dict['path_length'] = path_lengths.mean()
@@ -259,17 +269,15 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
         path_length_val = loss_reduced['path_length'].mean().item()
 
         if get_rank() == 0:
-            pbar.set_description(
-                (
-                    f'd: {d_loss_val:.4f}; g: {g_loss_val:.4f}; r1: {r1_val:.4f}; '
-                )
-            )
-            
+            pbar.set_description((
+                f'd: {d_loss_val:.4f}; g: {g_loss_val:.4f}; r1: {r1_val:.4f}; '
+            ))
+
             if i % args.save_freq == 0:
                 with torch.no_grad():
                     g_ema.eval()
                     sample, _ = g_ema(degraded_img)
-                    sample = torch.cat((degraded_img, sample, real_img), 0) 
+                    sample = torch.cat((degraded_img, sample, real_img), 0)
                     utils.save_image(
                         sample,
                         f'{args.sample}/{str(i).zfill(6)}.png',
@@ -279,7 +287,9 @@ def train(args, loader, generator, discriminator, losses, g_optim, d_optim, g_em
                     )
 
                 lpips_value = validation(g_ema, lpips_func, args, device)
-                print(f'{i}/{args.iter}: lpips: {lpips_value.cpu().numpy()[0][0][0][0]}')
+                print(
+                    f'{i}/{args.iter}: lpips: {lpips_value.cpu().numpy()[0][0][0][0]}'
+                )
 
             if i and i % args.save_freq == 0:
                 torch.save(
@@ -332,7 +342,8 @@ if __name__ == '__main__':
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        torch.distributed.init_process_group(backend='nccl',
+                                             init_method='env://')
         synchronize()
 
     args.latent = 512
@@ -340,48 +351,52 @@ if __name__ == '__main__':
 
     args.start_iter = 0
 
-    generator = FullGenerator(
-        args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow, device=device
-    ).to(device)
-    discriminator = Discriminator(
-        args.size, channel_multiplier=args.channel_multiplier, narrow=args.narrow, device=device
-    ).to(device)
-    g_ema = FullGenerator(
-        args.size, args.latent, args.n_mlp, channel_multiplier=args.channel_multiplier, narrow=args.narrow, device=device
-    ).to(device)
+    generator = FullGenerator(args.size,
+                              args.latent,
+                              args.n_mlp,
+                              channel_multiplier=args.channel_multiplier,
+                              narrow=args.narrow,
+                              device=device).to(device)
+    discriminator = Discriminator(args.size,
+                                  channel_multiplier=args.channel_multiplier,
+                                  narrow=args.narrow,
+                                  device=device).to(device)
+    g_ema = FullGenerator(args.size,
+                          args.latent,
+                          args.n_mlp,
+                          channel_multiplier=args.channel_multiplier,
+                          narrow=args.narrow,
+                          device=device).to(device)
     g_ema.eval()
     accumulate(g_ema, generator, 0)
 
     g_reg_ratio = args.g_reg_every / (args.g_reg_every + 1)
     d_reg_ratio = args.d_reg_every / (args.d_reg_every + 1)
-    
+
     g_optim = optim.Adam(
         generator.parameters(),
         lr=args.lr * g_reg_ratio,
-        betas=(0 ** g_reg_ratio, 0.99 ** g_reg_ratio),
+        betas=(0**g_reg_ratio, 0.99**g_reg_ratio),
     )
 
     d_optim = optim.Adam(
         discriminator.parameters(),
         lr=args.lr * d_reg_ratio,
-        betas=(0 ** d_reg_ratio, 0.99 ** d_reg_ratio),
+        betas=(0**d_reg_ratio, 0.99**d_reg_ratio),
     )
 
     if args.pretrain is not None:
         print('load model:', args.pretrain)
-        
+
         ckpt = torch.load(args.pretrain)
 
         generator.load_state_dict(ckpt['g'])
         discriminator.load_state_dict(ckpt['d'])
         g_ema.load_state_dict(ckpt['g_ema'])
-            
+
         g_optim.load_state_dict(ckpt['g_optim'])
         d_optim.load_state_dict(ckpt['d_optim'])
 
-        iter_str =  os.path.basename(str).replace(".pth", "")
-        args.start_iter = int(iter_str)
-    
     if args.pretrain_g is not None:
         print('load model:', args.pretrain_g)
 
@@ -394,11 +409,11 @@ if __name__ == '__main__':
 
         ckpt = torch.load(args.pretrain_d)
         discriminator.load_state_dict(ckpt)
-    
+
     smooth_l1_loss = torch.nn.SmoothL1Loss().to(device)
     id_loss = IDLoss(args.base_dir, device, ckpt_dict=None)
-    lpips_func = lpips.LPIPS(net='alex',version='0.1').to(device)
-    
+    lpips_func = lpips.LPIPS(net='alex', version='0.1').to(device)
+
     if args.distributed:
         generator = nn.parallel.DistributedDataParallel(
             generator,
@@ -420,29 +435,32 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
-        
+
     # dataset = FaceDataset(args.path, args.size)
     print("start build dataset...")
-    dataset = FacePairDataset(gt_path=args.gt_path, lq_path=args.lq_path, resolution=args.size)
+    dataset = FacePairDataset(gt_path=args.gt_path,
+                              lq_path=args.lq_path,
+                              resolution=args.size)
     print("start build loader...")
     loader = data.DataLoader(
         dataset,
         batch_size=args.batch,
-        sampler=data_sampler(dataset, shuffle=True, distributed=args.distributed),
+        sampler=data_sampler(dataset,
+                             shuffle=True,
+                             distributed=args.distributed),
         drop_last=True,
     )
 
-    train(args, loader, generator, discriminator, [smooth_l1_loss, id_loss], g_optim, d_optim, g_ema, lpips_func, device)
-   
+    train(args, loader, generator, discriminator, [smooth_l1_loss, id_loss],
+          g_optim, d_optim, g_ema, lpips_func, device)
 
 # CUDA_VISIBLE_DEVICES='0,1,3,4' python -m torch.distributed.launch --nproc_per_node=2 --master_port=4321 python train_pair_simple --size 1024 --channel_multiplier 2 --narrow 1 --ckpt weightsss --sample resultsss --batch 2 --gt_path examples/train/input --lq_path examples/train/reference
 
 # CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch --nproc_per_node=4 --master_port=4321 train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 6 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr --save_freq 5000
-# 
+#
 # --pretrain weights/040000.pth
 
 # --save_freq 10000 --pretrain weights/040000.pth
-
 
 # CUDA_VISIBLE_DEVICES='0,1,2,3' python train_pair_simple.py --size 256 --channel_multiplier 2 --narrow 1 --ckpt weights --sample results --batch 4 --gt_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-gt --lq_path /DATA/bvac/personal/Dataset/Res/Swap/swaped-part1-lr --save_freq 10000 --pretrain weights/040000.pth
 
