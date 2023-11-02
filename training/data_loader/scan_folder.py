@@ -70,7 +70,7 @@ def paired_paths_from_folder(folders, keys):
         input_name = osp.basename(gt_path)
         if input_name in input_paths:
             input_path = osp.join(input_folder, input_name)
-            gt_path = osp.join(gt_folder, gt_path)
+            gt_path = osp.join(gt_folder, input_name)
             paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
 
         # input_path = osp.join(input_folder, input_name)
